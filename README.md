@@ -18,7 +18,7 @@ go run ./examples/transfer/main.go
 
 ## Wallet Connect Dashboard (new)
 
-A lightweight dashboard is available to pair mobile/PC wallets in one place and plan cross-network bridge sessions with optional Firedancer-optimized Solana routing.
+A lightweight dashboard is available to pair popular mobile/desktop wallets in one place, validate wallet addresses, review suggested bridge routes, and plan cross-network bridge sessions with optional Firedancer-optimized Solana routing.
 
 Run:
 ```
