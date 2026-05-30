@@ -369,6 +369,24 @@
 </main>
 
 <script>
+  function normalizeBaseUrl(url) {
+    return (url || "").trim().replace(/\/+$/, "");
+  }
+
+  function setDefaultUrls() {
+    const origin = window.location.origin || "http://localhost:8080";
+    const defaults = {
+      agentBackendUrl: origin + "/api/agents",
+      depinBackendUrl: origin + "/api/nodes",
+      microBackendUrl: origin + "/api/charge",
+      benchBackendUrl: origin + "/api/run"
+    };
+    Object.entries(defaults).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) el.value = value;
+    });
+  }
+
   async function postJson(url, body) {
     const res = await fetch(url, {
       method: "POST",
@@ -392,7 +410,7 @@
 
   // Agents
   document.getElementById("btnListAgents").onclick = async () => {
-    const base = document.getElementById("agentBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("agentBackendUrl").value);
     if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
     setStatus("agentStatus", "Listing agents…", null);
     try {
@@ -408,7 +426,7 @@
   };
 
   document.getElementById("btnStartArb").onclick = async () => {
-    const base = document.getElementById("agentBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("agentBackendUrl").value);
     if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
     setStatus("agentStatus", "Starting arbitrage bot…", null);
     try {
@@ -424,7 +442,7 @@
   };
 
   document.getElementById("btnStartLiq").onclick = async () => {
-    const base = document.getElementById("agentBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("agentBackendUrl").value);
     if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
     setStatus("agentStatus", "Starting liquidation bot…", null);
     try {
@@ -441,7 +459,7 @@
 
   // DePIN
   document.getElementById("btnRefreshDepin").onclick = async () => {
-    const base = document.getElementById("depinBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("depinBackendUrl").value);
     if (!base) return setStatus("depinStatus", "Set DePIN backend base URL first.", "err");
     setStatus("depinStatus", "Refreshing node status…", null);
     try {
@@ -457,7 +475,7 @@
   };
 
   document.getElementById("btnRegisterNode").onclick = async () => {
-    const base = document.getElementById("depinBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("depinBackendUrl").value);
     if (!base) return setStatus("depinStatus", "Set DePIN backend base URL first.", "err");
     setStatus("depinStatus", "Registering node…", null);
     try {
@@ -474,7 +492,7 @@
 
   // Micro‑tx
   document.getElementById("btnTestMicroTx").onclick = async () => {
-    const url = document.getElementById("microBackendUrl").value.trim();
+    const url = normalizeBaseUrl(document.getElementById("microBackendUrl").value);
     const wallet = document.getElementById("walletAddress").value.trim();
     const amount = document.getElementById("microAmount").value.trim();
     if (!url) return setStatus("microStatus", "Set micro‑tx backend URL first.", "err");
@@ -529,7 +547,7 @@ echo "This is a scaffold. Wire it into your infra automation (GitHub agents, Ans
 
   // Bench / stress
   async function runBench(kind) {
-    const base = document.getElementById("benchBackendUrl").value.trim();
+    const base = normalizeBaseUrl(document.getElementById("benchBackendUrl").value);
     if (!base) {
       document.getElementById("benchLog").textContent = "Set benchmark backend URL first.";
       return;
@@ -554,6 +572,7 @@ echo "This is a scaffold. Wire it into your infra automation (GitHub agents, Ans
 
   document.getElementById("btnRunBench").onclick = () => runBench("benchmark");
   document.getElementById("btnRunStress").onclick = () => runBench("stress");
+  setDefaultUrls();
 </script>
 </body>
 </html>
