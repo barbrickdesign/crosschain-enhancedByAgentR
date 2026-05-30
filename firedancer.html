@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Solana x DePIN x Firedancer Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --card: #0b1020;
+      --accent: #14f195;
+      --accent-soft: rgba(20, 241, 149, 0.12);
+      --text: #f5f5f5;
+      --muted: #9ca3af;
+      --danger: #f97373;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color: var(--text);
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(5, 8, 22, 0.9);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    header span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    main {
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: minmax(0, 1fr); }
+    }
+    .card {
+      background: linear-gradient(145deg, #020617, #020617 40%, #020617 60%, #020617);
+      border-radius: 14px;
+      border: 1px solid #111827;
+      padding: 14px 16px 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+    }
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      color: var(--muted);
+    }
+    button {
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+    button.primary {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, #022c22, #065f46);
+      color: #ecfdf5;
+    }
+    button:hover {
+      background: #020617;
+      border-color: #374151;
+      transform: translateY(-0.5px);
+    }
+    button.primary:hover {
+      background: linear-gradient(135deg, #047857, #16a34a);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .field label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .field input, .field select, .field textarea {
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+      min-height: 28px;
+    }
+    .field textarea { min-height: 60px; }
+    .status {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: pre-line;
+    }
+    .status.ok { color: var(--accent); }
+    .status.err { color: var(--danger); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: minmax(0, 1fr); }
+    }
+    .metric {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: radial-gradient(circle at top left, #0b1120, #020617);
+      font-size: 11px;
+    }
+    .metric span {
+      display: block;
+    }
+    .metric-label {
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .metric-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .metric-note {
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .log {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      background: #020617;
+      border-radius: 8px;
+      border: 1px solid #111827;
+      padding: 8px;
+      max-height: 160px;
+      overflow: auto;
+      white-space: pre;
+    }
+    .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Solana x DePIN x Firedancer Ops</h1>
+    <span>Unified income + infra + Firedancer‑ready control panel</span>
+  </div>
+  <div>
+    <span id="networkLabel">Network: mainnet-beta (configurable)</span>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT COLUMN: INCOME + APPS -->
+  <section class="card">
+    <h2>
+      Income Engine
+      <span class="pill">Live Today</span>
+    </h2>
+    <p class="sub">
+      Spin up and monitor income streams: Solana agents, DePIN nodes, and micro‑transaction apps.
+      Backend endpoints are wired to your Go server.
+    </p>
+
+    <div class="grid-2">
+      <!-- Solana Agents -->
+      <div>
+        <div class="row">
+          <span class="badge">Solana Agents</span>
+        </div>
+        <div class="field">
+          <label for="agentBackendUrl">Agent backend base URL</label>
+          <input id="agentBackendUrl" placeholder="http://localhost:8080/api/agents" />
+        </div>
+        <div class="row">
+          <button class="primary" id="btnListAgents">List agents</button>
+          <button id="btnStartArb">Start arb bot</button>
+          <button id="btnStartLiq">Start liquidation bot</button>
+        </div>
+        <div id="agentStatus" class="status">No calls made yet.</div>
+      </div>
+
+      <!-- DePIN Nodes -->
+      <div>
+        <div class="row">
+          <span class="badge">DePIN Nodes</span>
+        </div>
+        <div class="field">
+          <label for="depinBackendUrl">DePIN backend base URL</label>
+          <input id="depinBackendUrl" placeholder="http://localhost:8080/api/nodes" />
+        </div>
+        <div class="row">
+          <button class="primary" id="btnRefreshDepin">Refresh node status</button>
+          <button id="btnRegisterNode">Register new node</button>
+        </div>
+        <div id="depinStatus" class="status">No calls made yet.</div>
+      </div>
+    </div>
+
+    <hr style="border-color:#111827; margin:12px 0;" />
+
+    <!-- Microtransaction Apps -->
+    <div>
+      <div class="row">
+        <span class="badge">Micro‑transaction Apps</span>
+      </div>
+      <div class="field">
+        <label for="microBackendUrl">Micro‑tx backend URL</label>
+        <input id="microBackendUrl" placeholder="http://localhost:8080/api/charge" />
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="walletAddress">User wallet (SOL)</label>
+          <input id="walletAddress" placeholder="Your or test wallet address" />
+        </div>
+        <div class="field">
+          <label for="microAmount">Amount (SOL or token units)</label>
+          <input id="microAmount" placeholder="0.001" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="primary" id="btnTestMicroTx">Test micro‑transaction</button>
+      </div>
+      <div id="microStatus" class="status">No calls made yet.</div>
+    </div>
+  </section>
+
+  <!-- RIGHT COLUMN: FIREDANCER + INFRA -->
+  <section class="card">
+    <h2>
+      Firedancer & Infra Readiness
+      <span class="pill">Future‑Proof</span>
+    </h2>
+    <p class="sub">
+      Prepare validators, testnets, and benchmarks for Firedancer. This panel doesn’t deploy Firedancer;
+      it organizes configs, scripts, and validation flows your infra can consume.
+    </p>
+
+    <!-- Validator / Node Config Generator -->
+    <div class="row">
+      <span class="badge">Validator Config Generator</span>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="validatorName">Validator label</label>
+        <input id="validatorName" placeholder="my-fd-validator-01" />
+      </div>
+      <div class="field">
+        <label for="validatorRegion">Region</label>
+        <select id="validatorRegion">
+          <option value="us-east">us-east</option>
+          <option value="us-west">us-west</option>
+          <option value="eu-central">eu-central</option>
+          <option value="ap-southeast">ap-southeast</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="validatorNotes">Notes (hardware, bandwidth, testnet/mainnet, etc.)</label>
+      <textarea id="validatorNotes" placeholder="e.g., 16c/32t, 128GB RAM, 10Gbit, testnet only"></textarea>
+    </div>
+    <div class="row">
+      <button class="primary" id="btnGenerateConfig">Generate config script</button>
+    </div>
+    <div class="field">
+      <label>Generated script (copy to your infra / GitHub agents)</label>
+      <pre class="log" id="configLog">No config generated yet.</pre>
+    </div>
+
+    <!-- Benchmark / Stress Test -->
+    <hr style="border-color:#111827; margin:12px 0;" />
+    <div class="row">
+      <span class="badge">Benchmark & Stress Test</span>
+    </div>
+    <div class="field">
+      <label for="benchBackendUrl">Benchmark backend URL</label>
+      <input id="benchBackendUrl" placeholder="http://localhost:8080/api/run" />
+    </div>
+    <div class="row">
+      <button class="primary" id="btnRunBench">Run benchmark</button>
+      <button id="btnRunStress">Run stress test</button>
+    </div>
+    <div class="grid-2">
+      <div class="metric">
+        <span class="metric-label">Last TPS (reported)</span>
+        <span class="metric-value" id="metricTps">–</span>
+        <span class="metric-note">From your benchmark backend.</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latency (ms)</span>
+        <span class="metric-value" id="metricLatency">–</span>
+        <span class="metric-note">End‑to‑end test latency.</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Benchmark log</label>
+      <pre class="log" id="benchLog">No benchmark run yet.</pre>
+    </div>
+  </section>
+</main>
+
+<script>
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {})
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch (e) {}
+    return { ok: res.ok, status: res.status, text, data };
+  }
+
+  function setStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove("ok", "err");
+    if (type === "ok") el.classList.add("ok");
+    if (type === "err") el.classList.add("err");
+  }
+
+  // Agents
+  document.getElementById("btnListAgents").onclick = async () => {
+    const base = document.getElementById("agentBackendUrl").value.trim();
+    if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
+    setStatus("agentStatus", "Listing agents…", null);
+    try {
+      const res = await postJson(base + "/list", {});
+      if (res.ok) {
+        setStatus("agentStatus", "Agents:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("agentStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("agentStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  document.getElementById("btnStartArb").onclick = async () => {
+    const base = document.getElementById("agentBackendUrl").value.trim();
+    if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
+    setStatus("agentStatus", "Starting arbitrage bot…", null);
+    try {
+      const res = await postJson(base + "/start-arb", {});
+      if (res.ok) {
+        setStatus("agentStatus", "Arb bot started:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("agentStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("agentStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  document.getElementById("btnStartLiq").onclick = async () => {
+    const base = document.getElementById("agentBackendUrl").value.trim();
+    if (!base) return setStatus("agentStatus", "Set agent backend base URL first.", "err");
+    setStatus("agentStatus", "Starting liquidation bot…", null);
+    try {
+      const res = await postJson(base + "/start-liq", {});
+      if (res.ok) {
+        setStatus("agentStatus", "Liquidation bot started:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("agentStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("agentStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  // DePIN
+  document.getElementById("btnRefreshDepin").onclick = async () => {
+    const base = document.getElementById("depinBackendUrl").value.trim();
+    if (!base) return setStatus("depinStatus", "Set DePIN backend base URL first.", "err");
+    setStatus("depinStatus", "Refreshing node status…", null);
+    try {
+      const res = await postJson(base + "/status", {});
+      if (res.ok) {
+        setStatus("depinStatus", "Nodes:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("depinStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("depinStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  document.getElementById("btnRegisterNode").onclick = async () => {
+    const base = document.getElementById("depinBackendUrl").value.trim();
+    if (!base) return setStatus("depinStatus", "Set DePIN backend base URL first.", "err");
+    setStatus("depinStatus", "Registering node…", null);
+    try {
+      const res = await postJson(base + "/register", { ts: Date.now() });
+      if (res.ok) {
+        setStatus("depinStatus", "Node registered:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("depinStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("depinStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  // Micro‑tx
+  document.getElementById("btnTestMicroTx").onclick = async () => {
+    const url = document.getElementById("microBackendUrl").value.trim();
+    const wallet = document.getElementById("walletAddress").value.trim();
+    const amount = document.getElementById("microAmount").value.trim();
+    if (!url) return setStatus("microStatus", "Set micro‑tx backend URL first.", "err");
+    if (!wallet || !amount) return setStatus("microStatus", "Set wallet and amount.", "err");
+    setStatus("microStatus", "Sending micro‑transaction request…", null);
+    try {
+      const res = await postJson(url, { wallet, amount });
+      if (res.ok) {
+        setStatus("microStatus", "Micro‑tx response:\n" + JSON.stringify(res.data || res.text, null, 2), "ok");
+      } else {
+        setStatus("microStatus", "Error " + res.status + ":\n" + res.text, "err");
+      }
+    } catch (e) {
+      setStatus("microStatus", "Request failed: " + e.message, "err");
+    }
+  };
+
+  // Config generator
+  document.getElementById("btnGenerateConfig").onclick = () => {
+    const name = document.getElementById("validatorName").value.trim() || "my-fd-validator";
+    const region = document.getElementById("validatorRegion").value;
+    const notes = document.getElementById("validatorNotes").value.trim();
+
+    const script = `# Firedancer‑ready validator scaffold (placeholder)
+VALIDATOR_NAME="${name}"
+REGION="${region}"
+
+echo "Setting up validator: $VALIDATOR_NAME in region: $REGION"
+
+# 1) Install dependencies
+# sudo apt update && sudo apt install -y build-essential clang pkg-config libssl-dev
+
+# 2) Clone Solana + Firedancer repos
+# git clone https://github.com/solana-labs/solana.git
+# git clone https://github.com/jumpcrypto/firedancer.git
+
+# 3) Build and configure
+# cd firedancer
+# ./configure --with-network=${region}
+# make -j$(nproc)
+
+# 4) Create systemd service, monitoring, and logs
+# sudo nano /etc/systemd/system/${name}.service
+
+# Notes:
+# ${notes || "Add hardware, bandwidth, and testnet/mainnet details here."}
+
+echo "This is a scaffold. Wire it into your infra automation (GitHub agents, Ansible, etc.)."
+`;
+    document.getElementById("configLog").textContent = script;
+  };
+
+  // Bench / stress
+  async function runBench(kind) {
+    const base = document.getElementById("benchBackendUrl").value.trim();
+    if (!base) {
+      document.getElementById("benchLog").textContent = "Set benchmark backend URL first.";
+      return;
+    }
+    document.getElementById("benchLog").textContent = `Running ${kind}…`;
+    try {
+      const res = await postJson(base + "/" + kind, { ts: Date.now() });
+      if (res.ok) {
+        const data = res.data || {};
+        document.getElementById("benchLog").textContent =
+          (data.log ? data.log + "\n\n" : "") +
+          JSON.stringify(data, null, 2);
+        if (data.tps != null) document.getElementById("metricTps").textContent = data.tps;
+        if (data.latency_ms != null) document.getElementById("metricLatency").textContent = data.latency_ms;
+      } else {
+        document.getElementById("benchLog").textContent = "Error " + res.status + ":\n" + res.text;
+      }
+    } catch (e) {
+      document.getElementById("benchLog").textContent = "Request failed: " + e.message;
+    }
+  }
+
+  document.getElementById("btnRunBench").onclick = () => runBench("benchmark");
+  document.getElementById("btnRunStress").onclick = () => runBench("stress");
+</script>
+</body>
+</html>
