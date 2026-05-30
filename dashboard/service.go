@@ -451,7 +451,7 @@ func validateAddress(chain, address string) error {
 }
 
 func validateBech32Prefix(address, prefix string) error {
-	hrp, _, err := bech32.Decode(strings.ToLower(address))
+	hrp, _, err := bech32.Decode(strings.ToLower(address), 1023)
 	if err != nil {
 		return err
 	}
