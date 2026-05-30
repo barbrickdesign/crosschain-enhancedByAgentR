@@ -5,11 +5,24 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type jsonMap map[string]interface{}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
 
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -32,6 +45,15 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
+func withRequestLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s status=%d duration_ms=%d", r.Method, r.URL.Path, rec.status, time.Since(start).Milliseconds())
+	})
+}
+
 func parseJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) bool {
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
@@ -39,6 +61,59 @@ func parseJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) bool
 		return false
 	}
 	return true
+}
+
+func normalizeURL(base string) string {
+	base = strings.TrimSpace(base)
+	if base == "" {
+		return ""
+	}
+	return strings.TrimRight(base, "/")
+}
+
+func projectRoot() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	return cwd
+}
+
+func registerRoutes(mux *http.ServeMux) {
+	// Agents
+	mux.HandleFunc("/api/agents/list", handleAgentsList)
+	mux.HandleFunc("/api/agents/start-arb", handleAgentsStartArb)
+	mux.HandleFunc("/api/agents/start-liq", handleAgentsStartLiq)
+
+	// DePIN
+	mux.HandleFunc("/api/nodes/status", handleDepinStatus)
+	mux.HandleFunc("/api/nodes/register", handleDepinRegister)
+
+	// Micro‑tx
+	mux.HandleFunc("/api/charge", handleMicroCharge)
+
+	// Benchmarks
+	mux.HandleFunc("/api/run/benchmark", handleBenchmark)
+	mux.HandleFunc("/api/run/stress", handleStress)
+}
+
+func registerStaticRoutes(mux *http.ServeMux, root string) {
+	htmlPath := filepath.Join(root, "firedancer.html")
+	if _, err := os.Stat(htmlPath); err == nil {
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/" {
+				http.NotFound(w, r)
+				return
+			}
+			http.ServeFile(w, r, htmlPath)
+		})
+	}
+
+	staticDir := filepath.Join(root, "static")
+	if fi, err := os.Stat(staticDir); err == nil && fi.IsDir() {
+		fs := http.FileServer(http.Dir(staticDir))
+		mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	}
 }
 
 // ---------- Agents ----------
@@ -55,17 +130,17 @@ func handleAgentsList(w http.ResponseWriter, r *http.Request) {
 
 func handleAgentsStartArb(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jsonMap{
-		"bot":   "arbitrage",
+		"bot":    "arbitrage",
 		"status": "started",
-		"ts":    time.Now().UTC().Format(time.RFC3339),
+		"ts":     time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
 func handleAgentsStartLiq(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jsonMap{
-		"bot":   "liquidation",
+		"bot":    "liquidation",
 		"status": "started",
-		"ts":    time.Now().UTC().Format(time.RFC3339),
+		"ts":     time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -144,31 +219,14 @@ func handleStress(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	root := projectRoot()
 	mux := http.NewServeMux()
+	registerRoutes(mux)
+	registerStaticRoutes(mux, root)
 
-	// Agents
-	mux.HandleFunc("/api/agents/list", handleAgentsList)
-	mux.HandleFunc("/api/agents/start-arb", handleAgentsStartArb)
-	mux.HandleFunc("/api/agents/start-liq", handleAgentsStartLiq)
-
-	// DePIN
-	mux.HandleFunc("/api/nodes/status", handleDepinStatus)
-	mux.HandleFunc("/api/nodes/register", handleDepinRegister)
-
-	// Micro‑tx
-	mux.HandleFunc("/api/charge", handleMicroCharge)
-
-	// Benchmarks
-	mux.HandleFunc("/api/run/benchmark", handleBenchmark)
-	mux.HandleFunc("/api/run/stress", handleStress)
-
-	// Static (optional): serve dashboard if placed alongside binary
-	fs := http.FileServer(http.Dir("./static"))
-	mux.Handle("/", fs)
-
-	addr := ":8080"
-	log.Println("Server listening on", addr)
-	if err := http.ListenAndServe(addr, withCORS(mux)); err != nil {
+	addr := normalizeURL(":8080")
+	log.Println("Firedancer demo server listening on", addr)
+	if err := http.ListenAndServe(addr, withRequestLogging(withCORS(mux))); err != nil {
 		log.Fatal(err)
 	}
 }
