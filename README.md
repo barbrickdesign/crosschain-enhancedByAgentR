@@ -16,6 +16,20 @@ Or run:
 go run ./examples/transfer/main.go
 ```
 
+## Wallet Connect Dashboard (new)
+
+A lightweight dashboard is available to pair mobile/PC wallets in one place and plan cross-network bridge sessions with optional Firedancer-optimized Solana routing.
+
+Run:
+```
+go run ./examples/walletdashboard/main.go
+```
+
+Then open:
+```
+http://localhost:8080
+```
+
 <!-- ## [Documentation](https://pkg.go.dev/github.com/jumpcrypto/crosschain) -->
 
 ## Features
